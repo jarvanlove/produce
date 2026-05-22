@@ -7,6 +7,7 @@ import {
   FileTextOutlined,
   UserOutlined,
   LogoutOutlined,
+  FireOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import type { MenuProps } from 'antd'
@@ -22,6 +23,7 @@ const Layout = () => {
     { key: '/import', icon: <UploadOutlined />, label: '数据导入' },
     { key: '/dashboard', icon: <BarChartOutlined />, label: '学情仪表盘' },
     { key: '/students', icon: <UserOutlined />, label: '学生画像' },
+    { key: '/heatmap', icon: <FireOutlined />, label: '知识点热力图' },
     { key: '/risk', icon: <WarningOutlined />, label: '风险预警' },
     { key: '/report', icon: <FileTextOutlined />, label: 'AI分析报告' },
   ]

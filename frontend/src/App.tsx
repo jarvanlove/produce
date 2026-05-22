@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import ImportPage from './pages/ImportPage'
 import StudentProfilePage from './pages/StudentProfilePage'
 import RiskAlertPage from './pages/RiskAlertPage'
+import HeatmapPage from './pages/HeatmapPage'
 import ReportPage from './pages/ReportPage'
 import Layout from './components/Layout'
 
@@ -23,6 +24,8 @@ function App() {
           <Route path="risk" element={<RiskAlertPage />} />
           <Route path="risk/:classId" element={<RiskAlertPage />} />
           <Route path="risk/:classId/:examId" element={<RiskAlertPage />} />
+          <Route path="heatmap/:classId" element={<HeatmapPage />} />
+          <Route path="heatmap/:classId/:examId" element={<HeatmapPage />} />
           <Route path="report/:classId/:examId" element={<ReportPage />} />
         </Route>
       </Routes>

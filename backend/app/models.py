@@ -70,6 +70,28 @@ class KnowledgePoint(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class ExamKnowledgeMapping(Base):
+    __tablename__ = "exam_knowledge_mapping"
+
+    id = Column(Integer, primary_key=True, index=True)
+    exam_id = Column(Integer, ForeignKey("exams.id"), nullable=False)
+    knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), nullable=False)
+    max_score = Column(Float, default=100.0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class StudentKnowledgeScore(Base):
+    __tablename__ = "student_knowledge_scores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    exam_id = Column(Integer, ForeignKey("exams.id"), nullable=False)
+    knowledge_point_id = Column(Integer, ForeignKey("knowledge_points.id"), nullable=False)
+    score = Column(Float, nullable=False)
+    mastery_rate = Column(Float, default=0.0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class RiskAlert(Base):
     __tablename__ = "risk_alerts"
 
