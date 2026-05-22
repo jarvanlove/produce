@@ -37,3 +37,4 @@ temp/
 # Playwright
 .playwright-mcp/
 test-results/
+.gstack/
