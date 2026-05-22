@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Boolean, Text, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Date, Float, Boolean, Text, JSON, ForeignKey, UniqueConstraint
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -34,6 +34,10 @@ class Student(Base):
     name = Column(String(32), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    __table_args__ = (
+        UniqueConstraint("class_id", "student_no", name="uix_class_student_no"),
+    )
+
 
 class Exam(Base):
     __tablename__ = "exams"
@@ -44,6 +48,10 @@ class Exam(Base):
     exam_date = Column(Date, nullable=False)
     full_score = Column(Integer, default=100)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("class_id", "name", "exam_date", name="uix_class_exam"),
+    )
 
 
 class Score(Base):
@@ -57,6 +65,10 @@ class Score(Base):
     school_rank = Column(Integer)
     subject_scores = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "exam_id", name="uix_student_exam_score"),
+    )
 
 
 class KnowledgePoint(Base):
@@ -116,3 +128,12 @@ class Report(Base):
     content = Column(Text)
     generated_by = Column(String(32), default="ai")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(64), unique=True, nullable=False)
+    value = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

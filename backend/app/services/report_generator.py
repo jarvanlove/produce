@@ -7,7 +7,7 @@ import pandas as pd
 from sqlalchemy import select
 
 from app.config import settings
-from app.models import Class, Exam, Score, Student
+from app.models import Class, Exam, Score, Student, SystemSetting
 from app.services.stats_engine import (
     calculate_class_avg,
     calculate_std_dev,
@@ -103,7 +103,7 @@ def _build_prompt(
     risk_summary: Dict[str, int],
     risk_students: List[Dict[str, Any]],
 ) -> str:
-    """构建发送给 DeepSeek 的结构化 prompt。"""
+    """构建发送给 AI 的结构化 prompt。"""
     stats_json = json.dumps(stats, ensure_ascii=False, indent=2)
     risk_json = json.dumps(
         {"summary": risk_summary, "risk_students": risk_students},
@@ -131,6 +131,20 @@ def _build_prompt(
     return prompt
 
 
+async def _get_ai_settings(db: Any) -> Dict[str, str]:
+    """从数据库读取 AI 配置，未设置则使用环境变量默认值。"""
+    result = await db.execute(select(SystemSetting))
+    rows = result.scalars().all()
+    db_settings = {row.key: row.value for row in rows}
+
+    return {
+        "provider": db_settings.get("ai_provider", "deepseek"),
+        "api_key": db_settings.get("ai_api_key", settings.DEEPSEEK_API_KEY),
+        "base_url": db_settings.get("ai_base_url", settings.DEEPSEEK_BASE_URL),
+        "model": db_settings.get("ai_model", settings.DEEPSEEK_MODEL),
+    }
+
+
 async def generate_report(class_id: int, exam_id: int, db: Any) -> str:
     """
     生成 AI 分析报告。
@@ -138,7 +152,7 @@ async def generate_report(class_id: int, exam_id: int, db: Any) -> str:
     流程：
     1. 查询班级、考试及成绩数据；
     2. 计算统计指标与风险预警；
-    3. 组装 prompt 调用 DeepSeek API；
+    3. 读取 AI 配置并调用对应 API；
     4. 若 API 失败或无 API Key，返回 fallback 模板报告。
     """
     # ---- 1. 获取基础信息 ----
@@ -244,9 +258,13 @@ async def generate_report(class_id: int, exam_id: int, db: Any) -> str:
             if level in risk_summary:
                 risk_summary[level] += 1
 
-    # ---- 4. 调用 DeepSeek API ----
-    api_key = settings.DEEPSEEK_API_KEY
-    if not api_key:
+    # ---- 4. 读取 AI 配置并调用 API ----
+    ai_config = await _get_ai_settings(db)
+    api_key = ai_config.get("api_key", "")
+    base_url = ai_config.get("base_url", "")
+    model = ai_config.get("model", "")
+
+    if not api_key or not base_url:
         return _build_fallback_report(
             cls.name, exam.name, stats, risk_summary, risk_students
         )
@@ -256,13 +274,13 @@ async def generate_report(class_id: int, exam_id: int, db: Any) -> str:
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
-                f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
+                f"{base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": settings.DEEPSEEK_MODEL,
+                    "model": model,
                     "messages": [
                         {
                             "role": "system",

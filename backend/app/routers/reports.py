@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from urllib.parse import quote
 
 from app.database import get_db
 from app.models import Report, Class, Exam
@@ -89,8 +90,10 @@ async def export_report(
     else:
         raise HTTPException(status_code=400, detail="不支持的导出格式，仅支持 docx 或 pdf")
 
+    # RFC 5987: filename*=UTF-8''percent-encoded-filename
+    encoded_filename = quote(filename, safe="")
     return StreamingResponse(
         buffer,
         media_type=media_type,
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"},
     )

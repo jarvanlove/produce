@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Select, Spin, message } from 'antd'
+import { Card, Select, Spin, message, Empty, Button } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
 
@@ -27,6 +27,13 @@ const HeatmapPage = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    if (!classId) {
+      const storedClassId = localStorage.getItem('currentClassId')
+      if (storedClassId) {
+        navigate(`/heatmap/${storedClassId}`, { replace: true })
+      }
+      return
+    }
     request
       .get<ExamItem[]>(`/dashboard/classes/${classId}/exams`)
       .then((res) => {
@@ -36,7 +43,7 @@ const HeatmapPage = () => {
         }
       })
       .catch(() => message.error('获取考试列表失败'))
-  }, [classId])
+  }, [classId, navigate])
 
   useEffect(() => {
     if (!selectedExamId) return

@@ -65,12 +65,20 @@ const RiskAlertPage = () => {
 
   // 加载班级列表（当无 classId 时）
   useEffect(() => {
-    if (classId) return
+    if (classId) {
+      setSelectedClassId(parseInt(classId))
+      return
+    }
+    const storedClassId = localStorage.getItem('currentClassId')
+    if (storedClassId) {
+      navigate(`/risk/${storedClassId}`, { replace: true })
+      return
+    }
     request
       .get<ClassItem[]>('/classes')
       .then((res) => setClasses(res.data))
       .catch(() => message.error('获取班级列表失败'))
-  }, [classId])
+  }, [classId, navigate])
 
   // 加载考试列表
   useEffect(() => {

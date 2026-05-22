@@ -1,0 +1,6 @@
+# Ignore non-production files from GitHub language stats
+docs/prototype/* linguist-documentation
+*.xlsx linguist-generated
+*.png linguist-generated
+*.db linguist-generated
+*.docx linguist-generated

@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 import bcrypt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
+
+security_scheme = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -29,3 +33,20 @@ def decode_token(token: str) -> dict:
         return payload
     except JWTError:
         return {}
+
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)) -> dict:
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="缺少认证令牌",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    payload = decode_token(credentials.credentials)
+    if not payload or not payload.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="无效的认证令牌",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload

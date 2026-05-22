@@ -24,9 +24,9 @@ async def init():
     async with session_maker() as session:
         # Create default user
         default_user = User(
-            username="T2024001",
-            name="演示教师",
-            hashed_password=get_password_hash("admin")
+            username="admin",
+            name="管理员",
+            hashed_password=get_password_hash("123456")
         )
         session.add(default_user)
 

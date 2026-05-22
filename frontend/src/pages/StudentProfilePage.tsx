@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Card, Table, Tag, Spin, message, Row, Col, Empty } from 'antd'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Card, Table, Tag, Spin, message, Row, Col, Empty, Button } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
 
@@ -38,7 +38,13 @@ const StudentProfilePage = () => {
   const [loadingProfile, setLoadingProfile] = useState(false)
 
   useEffect(() => {
-    if (!classId) return
+    if (!classId) {
+      const storedClassId = localStorage.getItem('currentClassId')
+      if (storedClassId) {
+        navigate(`/students/${storedClassId}`, { replace: true })
+      }
+      return
+    }
     setLoadingList(true)
     request
       .get<StudentItem[]>(`/students/classes/${classId}`)
@@ -50,7 +56,7 @@ const StudentProfilePage = () => {
       })
       .catch(() => message.error('获取学生列表失败'))
       .finally(() => setLoadingList(false))
-  }, [classId])
+  }, [classId, navigate])
 
   useEffect(() => {
     if (!selectedStudentId) return

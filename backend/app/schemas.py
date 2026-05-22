@@ -26,6 +26,10 @@ class ClassCreate(ClassBase):
     pass
 
 
+class ClassUpdate(ClassBase):
+    pass
+
+
 class ClassResponse(ClassBase):
     id: int
     student_count: int

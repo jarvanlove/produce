@@ -30,6 +30,7 @@ const ReportPage = () => {
 
   useEffect(() => {
     if (!classId || !examId) return
+    let ignore = false
 
     const generateAndFetch = async () => {
       try {
@@ -42,25 +43,60 @@ const ReportPage = () => {
 
         const { report_id } = genRes.data
         const getRes = await request.get<ReportData>(`/reports/${report_id}`)
-        setReport(getRes.data)
-      } catch {
-        message.error('报告生成失败')
+        if (!ignore) {
+          setReport(getRes.data)
+        }
+      } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        if (!ignore) {
+          message.error(detail || '报告生成失败')
+        }
       } finally {
-        setLoading(false)
+        if (!ignore) {
+          setLoading(false)
+        }
       }
     }
 
     generateAndFetch()
+    return () => { ignore = true }
   }, [classId, examId])
 
-  const handleExport = (format: 'docx' | 'pdf') => {
+  const handleExport = async (format: 'docx' | 'pdf') => {
     if (!report) return
     setExporting(format)
-    const url = `/api/reports/${report.id}/export?format=${format}`
-    window.location.href = url
-    // 短暂延迟后清除 loading 状态，因为浏览器下载不会给出完成回调
-    setTimeout(() => setExporting(null), 2000)
+    try {
+      const res = await request.get(`/reports/${report.id}/export?format=${format}`, {
+        responseType: 'blob',
+      })
+      const mimeType =
+        format === 'docx'
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : 'application/pdf'
+      const blob = new Blob([res.data], { type: mimeType })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `学情分析报告_${report.id}.${format}`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch {
+      message.error('导出失败，请重试')
+    } finally {
+      setExporting(null)
+    }
   }
+
+  useEffect(() => {
+    if (!classId || !examId) {
+      const storedClassId = localStorage.getItem('currentClassId')
+      if (storedClassId) {
+        navigate(`/dashboard/${storedClassId}`, { replace: true })
+      }
+    }
+  }, [classId, examId, navigate])
 
   if (!classId || !examId) {
     return (

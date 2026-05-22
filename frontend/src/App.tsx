@@ -7,6 +7,8 @@ import StudentProfilePage from './pages/StudentProfilePage'
 import RiskAlertPage from './pages/RiskAlertPage'
 import HeatmapPage from './pages/HeatmapPage'
 import ReportPage from './pages/ReportPage'
+import KnowledgePointPage from './pages/KnowledgePointPage'
+import SettingsPage from './pages/SettingsPage'
 import Layout from './components/Layout'
 
 function App() {
@@ -32,6 +34,9 @@ function App() {
           <Route path="heatmap/:classId/:examId" element={<HeatmapPage />} />
           <Route path="report" element={<ReportPage />} />
           <Route path="report/:classId/:examId" element={<ReportPage />} />
+          <Route path="knowledge-points" element={<KnowledgePointPage />} />
+          <Route path="knowledge-points/:classId" element={<KnowledgePointPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

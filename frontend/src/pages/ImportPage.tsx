@@ -3,7 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Upload, Button, message, Form, Input, Card, Empty } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps, UploadFile } from 'antd'
+import { AxiosError } from 'axios'
 import request from '../utils/request'
+
+interface ApiErrorDetail {
+  msg?: string
+  loc?: (string | number)[]
+  type?: string
+}
+
+interface ApiErrorResponse {
+  detail?: string | ApiErrorDetail[]
+}
 
 const ImportPage = () => {
   const { classId } = useParams()
@@ -35,12 +46,13 @@ const ImportPage = () => {
       const res = await request.post('/import/excel', formData)
       message.success(`导入成功，共导入 ${res.data.imported} 条记录`)
       navigate(`/classes`)
-    } catch (err: any) {
-      const detail = err.response?.data?.detail
+    } catch (err) {
+      const axiosErr = err as AxiosError<ApiErrorResponse>
+      const detail = axiosErr.response?.data?.detail
       if (Array.isArray(detail)) {
-        message.error(detail.map((d: any) => d.msg).join('; '))
+        message.error(detail.map((d) => d.msg).join('; '))
       } else {
-        message.error(detail || '导入失败')
+        message.error((detail as string) || '导入失败')
       }
     } finally {
       setUploading(false)
@@ -62,6 +74,11 @@ const ImportPage = () => {
   }
 
   if (!classId) {
+    const storedClassId = localStorage.getItem('currentClassId')
+    if (storedClassId) {
+      navigate(`/import/${storedClassId}`, { replace: true })
+      return null
+    }
     return (
       <Card style={{ textAlign: 'center', marginTop: 80 }}>
         <Empty description="请先从班级列表选择一个班级">
