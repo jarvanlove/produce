@@ -46,7 +46,9 @@ const ClassListPage = () => {
           <Button size="small" onClick={() => navigate(`/students/${record.id}`)}>
             学生画像
           </Button>
-          <Tag color="red">风险: 3人</Tag>
+          <Button size="small" danger onClick={() => navigate(`/risk/${record.id}`)}>
+            风险预警
+          </Button>
         </Space>
       ),
     },

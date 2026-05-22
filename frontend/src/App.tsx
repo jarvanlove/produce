@@ -20,7 +20,9 @@ function App() {
           <Route path="dashboard/:classId/:examId" element={<DashboardPage />} />
           <Route path="import/:classId" element={<ImportPage />} />
           <Route path="students/:classId" element={<StudentProfilePage />} />
+          <Route path="risk" element={<RiskAlertPage />} />
           <Route path="risk/:classId" element={<RiskAlertPage />} />
+          <Route path="risk/:classId/:examId" element={<RiskAlertPage />} />
           <Route path="report/:classId/:examId" element={<ReportPage />} />
         </Route>
       </Routes>

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, classes, import_data, dashboard
+from app.routers import auth, classes, import_data, dashboard, risk
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -38,6 +38,7 @@ app.include_router(auth.router)
 app.include_router(classes.router)
 app.include_router(import_data.router)
 app.include_router(dashboard.router)
+app.include_router(risk.router)
 
 # Static files (frontend build) — mount LAST so it doesn't shadow API routes
 frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
