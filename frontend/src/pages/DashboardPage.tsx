@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Statistic, Select, Table, Button, message, Spin } from 'antd'
+import { Card, Row, Col, Statistic, Select, Table, Button, message, Spin, Empty } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
 
@@ -66,6 +66,18 @@ const DashboardPage = () => {
       .catch(() => message.error('获取数据失败'))
       .finally(() => setLoading(false))
   }, [classId, selectedExamId])
+
+  if (!classId) {
+    return (
+      <Card style={{ textAlign: 'center', marginTop: 80 }}>
+        <Empty description="请先选择班级">
+          <Button type="primary" onClick={() => navigate('/classes')}>
+            去班级列表
+          </Button>
+        </Empty>
+      </Card>
+    )
+  }
 
   const distChartOption = {
     title: { text: '分数段分布', left: 'center' },

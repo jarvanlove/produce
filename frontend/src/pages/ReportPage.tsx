@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Card, Spin, Typography, message, Tag, Button, Space } from 'antd'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Card, Spin, Typography, message, Tag, Button, Space, Empty } from 'antd'
 import { FileWordOutlined, FilePdfOutlined } from '@ant-design/icons'
 import request from '../utils/request'
 
@@ -23,6 +23,7 @@ interface ReportData {
 
 const ReportPage = () => {
   const { classId, examId } = useParams<{ classId: string; examId: string }>()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [report, setReport] = useState<ReportData | null>(null)
   const [exporting, setExporting] = useState<string | null>(null)
@@ -59,6 +60,18 @@ const ReportPage = () => {
     window.location.href = url
     // 短暂延迟后清除 loading 状态，因为浏览器下载不会给出完成回调
     setTimeout(() => setExporting(null), 2000)
+  }
+
+  if (!classId || !examId) {
+    return (
+      <Card style={{ textAlign: 'center', marginTop: 80 }}>
+        <Empty description="请从学情仪表盘选择考试后生成报告">
+          <Button type="primary" onClick={() => navigate('/classes')}>
+            去班级列表
+          </Button>
+        </Empty>
+      </Card>
+    )
   }
 
   return (

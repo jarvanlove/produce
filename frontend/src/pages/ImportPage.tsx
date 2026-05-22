@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Upload, Button, message, Form, Input, Card } from 'antd'
+import { Upload, Button, message, Form, Input, Card, Empty } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
 import type { UploadProps, UploadFile } from 'antd'
 import request from '../utils/request'
@@ -59,6 +59,18 @@ const ImportPage = () => {
     },
     fileList,
     accept: '.xlsx,.xls',
+  }
+
+  if (!classId) {
+    return (
+      <Card style={{ textAlign: 'center', marginTop: 80 }}>
+        <Empty description="请先从班级列表选择一个班级">
+          <Button type="primary" onClick={() => navigate('/classes')}>
+            去班级列表
+          </Button>
+        </Empty>
+      </Card>
+    )
   }
 
   return (

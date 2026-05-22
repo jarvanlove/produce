@@ -50,6 +50,18 @@ const HeatmapPage = () => {
       .finally(() => setLoading(false))
   }, [classId, selectedExamId])
 
+  if (!classId) {
+    return (
+      <Card style={{ textAlign: 'center', marginTop: 80 }}>
+        <Empty description="请先选择班级">
+          <Button type="primary" onClick={() => navigate('/classes')}>
+            去班级列表
+          </Button>
+        </Empty>
+      </Card>
+    )
+  }
+
   const option = heatmapData
     ? {
         tooltip: {

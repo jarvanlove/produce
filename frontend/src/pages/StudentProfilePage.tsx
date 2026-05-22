@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Card, Table, Tag, Spin, message, Row, Col } from 'antd'
+import { Card, Table, Tag, Spin, message, Row, Col, Empty } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
 
@@ -30,6 +30,7 @@ interface ProfileData {
 
 const StudentProfilePage = () => {
   const { classId } = useParams()
+  const navigate = useNavigate()
   const [students, setStudents] = useState<StudentItem[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState<number | undefined>(undefined)
   const [profile, setProfile] = useState<ProfileData | null>(null)
@@ -60,6 +61,18 @@ const StudentProfilePage = () => {
       .catch(() => message.error('获取学生画像失败'))
       .finally(() => setLoadingProfile(false))
   }, [selectedStudentId])
+
+  if (!classId) {
+    return (
+      <Card style={{ textAlign: 'center', marginTop: 80 }}>
+        <Empty description="请先选择班级">
+          <Button type="primary" onClick={() => navigate('/classes')}>
+            去班级列表
+          </Button>
+        </Empty>
+      </Card>
+    )
+  }
 
   const columns = [
     { title: '姓名', dataIndex: 'name', key: 'name' },
