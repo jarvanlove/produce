@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Card, Form, Input, Button, message, Select } from 'antd'
+import { Card, Form, Input, Button, message, Select, Tag, Divider } from 'antd'
+import { SettingOutlined, ApiOutlined, LinkOutlined, RobotOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import request from '../utils/request'
 
 interface SettingsData {
@@ -61,6 +62,7 @@ const SettingsPage = () => {
   const [testing, setTesting] = useState(false)
   const [provider, setProvider] = useState<string>('deepseek')
   const [apiKeyTouched, setApiKeyTouched] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -89,13 +91,13 @@ const SettingsPage = () => {
     setSaving(true)
     try {
       const payload = { ...values }
-      // 若用户未修改 API Key 且当前是脱敏值，则不传该字段，避免覆盖真实密钥
       if (!apiKeyTouched && isMaskedKey(values.ai_api_key || '')) {
         delete (payload as Partial<SettingsData>).ai_api_key
       }
       await request.put('/settings', payload)
       message.success('设置已保存')
       setApiKeyTouched(false)
+      setTestResult(null)
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
       message.error(detail || '保存失败')
@@ -108,7 +110,9 @@ const SettingsPage = () => {
     try {
       const values = await form.validateFields()
       setTesting(true)
+      setTestResult(null)
       const res = await request.post<{ success: boolean; message: string }>('/settings/test', values)
+      setTestResult(res.data)
       if (res.data.success) {
         message.success(res.data.message)
       } else {
@@ -125,57 +129,138 @@ const SettingsPage = () => {
   const modelOptions = MODEL_OPTIONS[provider] || []
 
   return (
-    <div>
-      <h2 style={{ marginBottom: 24 }}>系统设置</h2>
-      <Card title="AI 模型配置" style={{ maxWidth: 600 }} loading={loading}>
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item
-            name="ai_provider"
-            label="模型服务商"
-            rules={[{ required: true }]}
-          >
-            <Select options={PROVIDER_OPTIONS} onChange={handleProviderChange} />
-          </Form.Item>
+    <div className="page-fade-in">
+      <h2 style={{ margin: 0, fontWeight: 600, fontSize: 20, marginBottom: 24 }}>系统设置</h2>
 
-          <Form.Item
-            name="ai_api_key"
-            label="API Key"
-            rules={[{ required: true, message: '请输入 API Key' }]}
-          >
-            <Input.Password placeholder="sk-..." onChange={() => setApiKeyTouched(true)} />
-          </Form.Item>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
+        <Card
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <RobotOutlined style={{ color: '#2563eb' }} />
+              <span>AI 模型配置</span>
+            </div>
+          }
+          className="card-hover"
+          loading={loading}
+        >
+          <Form form={form} layout="vertical" onFinish={handleSave}>
+            <Form.Item
+              name="ai_provider"
+              label="模型服务商"
+              rules={[{ required: true, message: '请选择模型服务商' }]}
+            >
+              <Select options={PROVIDER_OPTIONS} onChange={handleProviderChange} size="large" />
+            </Form.Item>
 
-          <Form.Item
-            name="ai_base_url"
-            label="Base URL"
-            rules={[{ required: true, message: '请输入 Base URL' }]}
-          >
-            <Input placeholder="https://api.xxx.com/v1" />
-          </Form.Item>
+            <Form.Item
+              name="ai_api_key"
+              label="API Key"
+              rules={[{ required: true, message: '请输入 API Key' }]}
+            >
+              <Input.Password
+                placeholder="sk-..."
+                onChange={() => setApiKeyTouched(true)}
+                size="large"
+                prefix={<ApiOutlined style={{ color: '#94a3b8' }} />}
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="ai_model"
-            label="模型名称"
-            rules={[{ required: true, message: '请选择模型名称' }]}
-          >
-            <Select
-              options={modelOptions}
-              placeholder="请选择模型"
-              showSearch
-              allowClear
-            />
-          </Form.Item>
+            <Form.Item
+              name="ai_base_url"
+              label="Base URL"
+              rules={[{ required: true, message: '请输入 Base URL' }]}
+            >
+              <Input
+                placeholder="https://api.xxx.com/v1"
+                size="large"
+                prefix={<LinkOutlined style={{ color: '#94a3b8' }} />}
+              />
+            </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={saving} style={{ marginRight: 12 }}>
-              保存设置
-            </Button>
-            <Button onClick={handleTest} loading={testing}>
-              测试连接
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+            <Form.Item
+              name="ai_model"
+              label="模型名称"
+              rules={[{ required: true, message: '请选择模型名称' }]}
+            >
+              <Select
+                options={modelOptions}
+                placeholder="请选择模型"
+                showSearch
+                allowClear
+                size="large"
+              />
+            </Form.Item>
+
+            {testResult && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  background: testResult.success ? '#ecfdf5' : '#fef2f2',
+                  border: `1px solid ${testResult.success ? '#a7f3d0' : '#fecaca'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                {testResult.success ? (
+                  <CheckCircleOutlined style={{ color: '#059669' }} />
+                ) : (
+                  <CloseCircleOutlined style={{ color: '#dc2626' }} />
+                )}
+                <span style={{ color: testResult.success ? '#065f46' : '#991b1b', fontSize: 14 }}>
+                  {testResult.message}
+                </span>
+              </div>
+            )}
+
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={saving}
+                size="large"
+                icon={<SettingOutlined />}
+                style={{ marginRight: 12, height: 40 }}
+              >
+                保存设置
+              </Button>
+              <Button
+                onClick={handleTest}
+                loading={testing}
+                size="large"
+                style={{ height: 40 }}
+              >
+                测试连接
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+
+        <div>
+          <Card title="配置说明" size="small" className="card-hover">
+            <div style={{ color: '#475569', fontSize: 14, lineHeight: 1.8 }}>
+              <p style={{ marginBottom: 8 }}>
+                <Tag color="blue">DeepSeek</Tag> 国产大模型，推理能力强
+              </p>
+              <p style={{ marginBottom: 8 }}>
+                <Tag color="orange">MiniMax</Tag> 稀宇科技，中文对话流畅
+              </p>
+              <p style={{ marginBottom: 8 }}>
+                <Tag color="cyan">Qwen</Tag> 阿里通义千问，开源生态丰富
+              </p>
+              <p style={{ marginBottom: 8 }}>
+                <Tag color="purple">GLM</Tag> 智谱清言，学术场景表现好
+              </p>
+              <Divider style={{ margin: '12px 0' }} />
+              <p style={{ fontSize: 13, color: '#94a3b8' }}>
+                切换服务商时，Base URL 和推荐模型会自动填充。API Key 仅在修改时才会更新。
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

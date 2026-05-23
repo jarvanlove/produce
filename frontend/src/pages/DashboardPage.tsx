@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Statistic, Select, Table, Button, message, Spin, Empty, Modal, Form, InputNumber } from 'antd'
-import { BookOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Select, Table, Button, message, Skeleton, Modal, Form, InputNumber } from 'antd'
+import { BookOutlined, FileTextOutlined, TeamOutlined, TrophyOutlined, RiseOutlined, BarChartOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
+import EmptyState from '../components/EmptyState'
 
 interface ExamItem {
   id: number
@@ -184,104 +185,121 @@ const DashboardPage = () => {
   if (!classId) {
     return (
       <Card style={{ textAlign: 'center', marginTop: 80 }}>
-        <Empty description="请先选择班级">
-          <Button type="primary" onClick={() => navigate('/classes')}>
-            去班级列表
-          </Button>
-        </Empty>
+        <EmptyState
+          description="请先选择班级"
+          action={{ text: '去班级列表', onClick: () => navigate('/classes') }}
+        />
       </Card>
     )
   }
 
   const distChartOption = {
-    title: { text: '分数段分布', left: 'center' },
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: stats?.score_distribution.map((d) => d.range) || [] },
-    yAxis: { type: 'value' },
+    title: { text: '分数段分布', left: 'center', textStyle: { fontSize: 16, fontWeight: 600, color: '#1e293b' } },
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(255,255,255,0.95)', borderColor: '#e2e8f0', textStyle: { color: '#334155' } },
+    xAxis: { type: 'category', data: stats?.score_distribution.map((d) => d.range) || [], axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b' } },
+    yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
     series: [
       {
         data: stats?.score_distribution.map((d) => d.count) || [],
         type: 'bar',
-        itemStyle: { color: '#5470c6' },
+        itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
+        barWidth: '50%',
       },
     ],
   }
 
   const scoreColumns = [
-    { title: '姓名', dataIndex: 'student_name', key: 'student_name' },
+    { title: '姓名', dataIndex: 'student_name', key: 'student_name', render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span> },
     { title: '考号', dataIndex: 'student_no', key: 'student_no' },
     { title: '总分', dataIndex: 'total_score', key: 'total_score', sorter: (a: ScoreItem, b: ScoreItem) => a.total_score - b.total_score },
-    { title: '班名次', dataIndex: 'class_rank', key: 'class_rank' },
+    { title: '班名次', dataIndex: 'class_rank', key: 'class_rank', render: (v: number) => <span style={{ fontWeight: 600, color: v <= 3 ? '#2563eb' : '#475569' }}>{v}</span> },
   ]
 
+  const statCards = stats ? [
+    { title: '参考人数', value: stats.student_count, suffix: '人', icon: <TeamOutlined />, color: '#2563eb', bg: '#eff6ff' },
+    { title: '班级均分', value: stats.class_avg, suffix: '分', icon: <BarChartOutlined />, color: '#059669', bg: '#ecfdf5' },
+    { title: '及格率', value: (stats.pass_rate * 100).toFixed(1), suffix: '%', icon: <RiseOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '优秀率', value: (stats.excellent_rate * 100).toFixed(1), suffix: '%', icon: <TrophyOutlined />, color: '#dc2626', bg: '#fef2f2' },
+  ] : []
+
   return (
-    <Spin spinning={loading}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2>学情仪表盘</h2>
-          <div>
-            <Select
-              style={{ width: 200, marginRight: 8 }}
-              placeholder="选择考试"
-              value={selectedExamId}
-              onChange={(value) => setSelectedExamId(value)}
-              options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
-            />
-            <Button icon={<BookOutlined />} onClick={openMappingModal} style={{ marginRight: 8 }}>
-              配置知识点
-            </Button>
-            <Button
-              type="primary"
-              disabled={!selectedExamId}
-              onClick={() => navigate(`/report/${classId}/${selectedExamId}`)}
-            >
-              生成AI报告
-            </Button>
-          </div>
+    <div className="page-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>学情仪表盘</h2>
+        <div>
+          <Select
+            style={{ width: 220, marginRight: 8 }}
+            placeholder="选择考试"
+            value={selectedExamId}
+            onChange={(value) => setSelectedExamId(value)}
+            options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
+          />
+          <Button icon={<BookOutlined />} onClick={openMappingModal} style={{ marginRight: 8 }}>
+            配置知识点
+          </Button>
+          <Button
+            type="primary"
+            disabled={!selectedExamId}
+            icon={<FileTextOutlined />}
+            onClick={() => navigate(`/report/${classId}/${selectedExamId}`)}
+          >
+            生成AI报告
+          </Button>
         </div>
-
-        {stats && (
-          <>
-            <Row gutter={16}>
-              <Col span={6}>
-                <Card><Statistic title="班级均分" value={stats.class_avg} /></Card>
-              </Col>
-              <Col span={6}>
-                <Card><Statistic title="标准差" value={stats.std_dev} /></Card>
-              </Col>
-              <Col span={6}>
-                <Card><Statistic title="及格率" value={stats.pass_rate * 100} precision={1} suffix="%" /></Card>
-              </Col>
-              <Col span={6}>
-                <Card><Statistic title="优秀率" value={stats.excellent_rate * 100} precision={1} suffix="%" /></Card>
-              </Col>
-            </Row>
-
-            <Card style={{ marginTop: 16 }}>
-              <ReactECharts option={distChartOption} style={{ height: 300 }} />
-            </Card>
-
-            <Card title="学生成绩明细" style={{ marginTop: 16 }}>
-              <Table
-                dataSource={scores}
-                columns={scoreColumns}
-                rowKey="student_no"
-                pagination={{ pageSize: 10 }}
-                size="small"
-              />
-            </Card>
-          </>
-        )}
-
-        {!stats && !loading && (
-          <Card style={{ marginTop: 16, textAlign: 'center' }}>
-            <p>暂无考试数据，请先导入成绩</p>
-            <Button type="primary" onClick={() => navigate(`/import/${classId}`)}>
-              去导入
-            </Button>
-          </Card>
-        )}
       </div>
+
+      {loading && !stats ? (
+        <Row gutter={16}>
+          {[1, 2, 3, 4].map((i) => (
+            <Col span={6} key={i}>
+              <Card><Skeleton active paragraph={{ rows: 1 }} /></Card>
+            </Col>
+          ))}
+        </Row>
+      ) : stats ? (
+        <>
+          <Row gutter={16}>
+            {statCards.map((s) => (
+              <Col span={6} key={s.title}>
+                <Card className="card-hover" bodyStyle={{ padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                      {s.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>{s.title}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>
+                        {s.value}<span style={{ fontSize: 14, fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>{s.suffix}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          <Card style={{ marginTop: 16 }} className="card-hover">
+            <ReactECharts option={distChartOption} style={{ height: 320 }} />
+          </Card>
+
+          <Card title="学生成绩明细" style={{ marginTop: 16 }} className="card-hover">
+            <Table
+              dataSource={scores}
+              columns={scoreColumns}
+              rowKey="student_no"
+              pagination={{ pageSize: 10 }}
+              size="small"
+            />
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <EmptyState
+            description="暂无考试数据，请先导入成绩"
+            action={{ text: '去导入成绩', onClick: () => navigate(`/import/${classId}`) }}
+          />
+        </Card>
+      )}
 
       <Modal
         title="配置考试知识点映射"
@@ -333,7 +351,7 @@ const DashboardPage = () => {
           </Form.List>
         </Form>
       </Modal>
-    </Spin>
+    </div>
   )
 }
 

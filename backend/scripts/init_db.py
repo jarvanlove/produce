@@ -42,8 +42,8 @@ async def init():
 
         await session.commit()
         print("数据库初始化完成")
-        print("默认账号：T2024001")
-        print("默认密码：admin")
+        print("默认账号：admin")
+        print("默认密码：123456")
 
     await engine.dispose()
 

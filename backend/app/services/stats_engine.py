@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 def calculate_class_avg(scores: pd.Series) -> float:
@@ -11,17 +11,34 @@ def calculate_std_dev(scores: pd.Series) -> float:
     return round(scores.std(), 1)
 
 
-def calculate_pass_rate(scores: pd.Series, pass_line: float = 60.0) -> float:
+def calculate_pass_rate(scores: pd.Series, full_score: Optional[float] = None) -> float:
+    pass_line = full_score * 0.6 if full_score else 60.0
     return round((scores >= pass_line).sum() / len(scores), 3)
 
 
-def calculate_excellent_rate(scores: pd.Series, excellent_line: float = 90.0) -> float:
+def calculate_excellent_rate(scores: pd.Series, full_score: Optional[float] = None) -> float:
+    excellent_line = full_score * 0.9 if full_score else 90.0
     return round((scores >= excellent_line).sum() / len(scores), 3)
 
 
-def score_distribution(scores: pd.Series) -> List[Dict[str, Any]]:
-    bins = [0, 60, 70, 80, 90, 100, 200]
-    labels = ["<60", "60-70", "70-80", "80-90", "90-100", "100+"]
+def score_distribution(scores: pd.Series, full_score: Optional[float] = None) -> List[Dict[str, Any]]:
+    if full_score and full_score > 0:
+        max_score = scores.max()
+        top = max(max_score * 1.01, full_score * 2)
+        bins = [
+            0,
+            full_score * 0.6,
+            full_score * 0.7,
+            full_score * 0.8,
+            full_score * 0.9,
+            full_score,
+            top,
+        ]
+        labels = ["<60%", "60-70%", "70-80%", "80-90%", "90-100%", "100%+"]
+    else:
+        bins = [0, 60, 70, 80, 90, 100, 200]
+        labels = ["<60", "60-70", "70-80", "80-90", "90-100", "100+"]
+
     dist = pd.cut(scores, bins=bins, labels=labels, include_lowest=True, right=False).value_counts().sort_index()
     return [{"range": str(idx), "count": int(val)} for idx, val in dist.items() if not pd.isna(idx)]
 

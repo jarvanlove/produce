@@ -39,6 +39,7 @@ async def parse_excel(
 
     imported = 0
     errors = []
+    max_total_score = 0
 
     # Create exam
     from datetime import datetime
@@ -59,6 +60,9 @@ async def parse_excel(
                 total_score = 0
                 subject_scores = {}
 
+                class_rank = None
+                school_rank = None
+
                 for col in data_df.columns:
                     col_str = str(col)
                     if col_str in ["姓名", "name", "学生姓名"]:
@@ -67,13 +71,28 @@ async def parse_excel(
                         student_no = str(row[col]) if pd.notna(row[col]) else None
                     elif col_str in ["总分", "总得分", "total", "total_score"]:
                         total_score = float(row[col]) if pd.notna(row[col]) else 0
+                    elif col_str in ["班名次", "班级名次", "class_rank"]:
+                        if pd.notna(row[col]):
+                            class_rank = int(float(row[col]))
+                    elif col_str in ["校名次", "学校名次", "年级名次", "school_rank"]:
+                        if pd.notna(row[col]):
+                            school_rank = int(float(row[col]))
                     elif col_str.endswith("得分") or col_str.endswith("成绩"):
                         subject_name = col_str.replace("得分", "").replace("成绩", "").strip()
                         if pd.notna(row[col]):
                             subject_scores[subject_name] = float(row[col])
+                    elif col_str.endswith("班名次") and class_rank is None:
+                        if pd.notna(row[col]):
+                            class_rank = int(float(row[col]))
+                    elif col_str.endswith("校名次") and school_rank is None:
+                        if pd.notna(row[col]):
+                            school_rank = int(float(row[col]))
 
                 if not name or not student_no:
                     continue
+
+                if total_score > max_total_score:
+                    max_total_score = total_score
 
                 # Check if student exists
                 result = await db.execute(
@@ -98,6 +117,8 @@ async def parse_excel(
                     student_id=student.id,
                     exam_id=exam.id,
                     total_score=total_score,
+                    class_rank=class_rank,
+                    school_rank=school_rank,
                     subject_scores=subject_scores
                 )
                 db.add(score)
@@ -110,6 +131,11 @@ async def parse_excel(
             # 没有有效数据行，回滚并删除已创建的考试
             await db.rollback()
             return ImportResponse(imported=0, skipped=0, errors=["未找到有效学生数据"])
+
+        # 设置考试满分（根据数据中最高总分）
+        if max_total_score > 0:
+            exam.full_score = int(max_total_score)
+            db.add(exam)
 
         await db.commit()
 

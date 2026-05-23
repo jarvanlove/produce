@@ -167,14 +167,15 @@ async def generate_report(class_id: int, exam_id: int, db: Any) -> str:
 
     if scores:
         series = pd.Series([s.total_score for s in scores])
+        full_score = exam.full_score if exam.full_score else None
         stats = {
             "class_name": cls.name,
             "exam_name": exam.name,
             "class_avg": calculate_class_avg(series),
             "std_dev": calculate_std_dev(series),
-            "pass_rate": calculate_pass_rate(series),
-            "excellent_rate": calculate_excellent_rate(series),
-            "score_distribution": score_distribution(series),
+            "pass_rate": calculate_pass_rate(series, full_score),
+            "excellent_rate": calculate_excellent_rate(series, full_score),
+            "score_distribution": score_distribution(series, full_score),
             "student_count": len(scores),
         }
     else:

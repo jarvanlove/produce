@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Select, Spin, message, Empty, Button } from 'antd'
+import { Card, Select, message, Skeleton } from 'antd'
+import { FireOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
+import EmptyState from '../components/EmptyState'
 
 interface ExamItem {
   id: number
@@ -60,11 +62,10 @@ const HeatmapPage = () => {
   if (!classId) {
     return (
       <Card style={{ textAlign: 'center', marginTop: 80 }}>
-        <Empty description="请先选择班级">
-          <Button type="primary" onClick={() => navigate('/classes')}>
-            去班级列表
-          </Button>
-        </Empty>
+        <EmptyState
+          description="请先选择班级"
+          action={{ text: '去班级列表', onClick: () => navigate('/classes') }}
+        />
       </Card>
     )
   }
@@ -73,30 +74,35 @@ const HeatmapPage = () => {
     ? {
         tooltip: {
           position: 'top',
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderColor: '#e2e8f0',
+          textStyle: { color: '#334155' },
           formatter: (params: any) => {
             const student = heatmapData.students[params.data[1]]
             const kp = heatmapData.knowledge_points[params.data[0]]
             const score = params.data[2]
-            return `${student}<br/>${kp}: ${score}`
+            return `<div style="font-weight:600;margin-bottom:4px">${student}</div><div style="color:#64748b">${kp}: <span style="color:#2563eb;font-weight:600">${score}</span></div>`
           },
         },
         grid: {
           height: '70%',
-          top: '10%',
-          left: '15%',
-          right: '10%',
+          top: '8%',
+          left: '12%',
+          right: '8%',
         },
         xAxis: {
           type: 'category',
           data: heatmapData.knowledge_points,
           splitArea: { show: true },
-          axisLabel: { rotate: 30, interval: 0 },
+          axisLabel: { rotate: 35, interval: 0, color: '#475569', fontSize: 11 },
+          axisLine: { lineStyle: { color: '#e2e8f0' } },
         },
         yAxis: {
           type: 'category',
           data: heatmapData.students.slice(0, 20),
           splitArea: { show: true },
-          axisLabel: { interval: 0 },
+          axisLabel: { interval: 0, color: '#475569', fontSize: 11 },
+          axisLine: { lineStyle: { color: '#e2e8f0' } },
         },
         visualMap: {
           min: 0,
@@ -104,9 +110,10 @@ const HeatmapPage = () => {
           calculable: true,
           orient: 'horizontal',
           left: 'center',
-          bottom: '5%',
+          bottom: '2%',
+          textStyle: { color: '#64748b' },
           inRange: {
-            color: ['#f0f9e8', '#bae4bc', '#7bccc4', '#43a2ca', '#0868ac'],
+            color: ['#fef2f2', '#fecaca', '#f87171', '#dc2626', '#991b1b'],
           },
         },
         series: [
@@ -118,11 +125,13 @@ const HeatmapPage = () => {
               .flatMap((row, y) =>
                 row.map((val, x) => [x, y, val])
               ),
-            label: { show: true, fontSize: 10 },
+            label: { show: true, fontSize: 10, color: '#fff', textShadowColor: 'rgba(0,0,0,0.3)', textShadowBlur: 2 },
             emphasis: {
               itemStyle: {
-                shadowBlur: 10,
-                shadowColor: 'rgba(0, 0, 0, 0.5)',
+                shadowBlur: 12,
+                shadowColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: '#1e293b',
+                borderWidth: 2,
               },
             },
           },
@@ -131,33 +140,41 @@ const HeatmapPage = () => {
     : {}
 
   return (
-    <Spin spinning={loading}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2>知识点热力图</h2>
-          <Select
-            style={{ width: 200 }}
-            placeholder="选择考试"
-            value={selectedExamId}
-            onChange={(value) => {
-              setSelectedExamId(value)
-              navigate(`/heatmap/${classId}/${value}`, { replace: true })
-            }}
-            options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
-          />
+    <div className="page-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <FireOutlined style={{ fontSize: 22, color: '#dc2626' }} />
+          <h2 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>知识点热力图</h2>
         </div>
-
-        {heatmapData && heatmapData.students.length > 0 ? (
-          <Card>
-            <ReactECharts option={option} style={{ height: 600 }} />
-          </Card>
-        ) : (
-          <Card style={{ textAlign: 'center' }}>
-            <p>暂无数据，请先导入成绩</p>
-          </Card>
-        )}
+        <Select
+          style={{ width: 220 }}
+          placeholder="选择考试"
+          value={selectedExamId}
+          onChange={(value) => {
+            setSelectedExamId(value)
+            navigate(`/heatmap/${classId}/${value}`, { replace: true })
+          }}
+          options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
+        />
       </div>
-    </Spin>
+
+      {loading && !heatmapData ? (
+        <Card>
+          <Skeleton active paragraph={{ rows: 8 }} />
+        </Card>
+      ) : heatmapData && heatmapData.students.length > 0 ? (
+        <Card className="card-hover">
+          <ReactECharts option={option} style={{ height: 600 }} />
+        </Card>
+      ) : (
+        <Card>
+          <EmptyState
+            description="暂无数据，请先导入成绩并配置知识点映射"
+            action={{ text: '去导入', onClick: () => navigate(`/import/${classId}`) }}
+          />
+        </Card>
+      )}
+    </div>
   )
 }
 

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Select, Table, Button, message, Spin, Tag, Badge } from 'antd'
+import { Card, Row, Col, Select, Table, message, Tag, Skeleton } from 'antd'
+import { WarningOutlined, TeamOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons'
 import request from '../utils/request'
+import EmptyState from '../components/EmptyState'
 
 interface ExamItem {
   id: number
@@ -37,10 +39,10 @@ interface RiskData {
   student_count: number
 }
 
-const levelMap: Record<string, { color: string; text: string }> = {
-  high: { color: 'red', text: '高风险' },
-  medium: { color: 'orange', text: '中风险' },
-  low: { color: 'blue', text: '低风险' },
+const levelMap: Record<string, { color: string; text: string; bg: string; border: string }> = {
+  high: { color: '#dc2626', text: '高风险', bg: '#fef2f2', border: '#fecaca' },
+  medium: { color: '#d97706', text: '中风险', bg: '#fffbeb', border: '#fde68a' },
+  low: { color: '#2563eb', text: '低风险', bg: '#eff6ff', border: '#bfdbfe' },
 }
 
 const typeMap: Record<string, string> = {
@@ -121,11 +123,12 @@ const RiskAlertPage = () => {
   }
 
   const columns = [
-    { title: '姓名', dataIndex: 'student_name', key: 'student_name' },
+    { title: '姓名', dataIndex: 'student_name', key: 'student_name', render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span> },
     { title: '考号', dataIndex: 'student_no', key: 'student_no' },
     {
       title: '风险等级',
       key: 'risk_level',
+      width: 100,
       render: (_: unknown, record: RiskStudent) => {
         const maxLevel = record.alerts.some((a) => a.risk_level === 'high')
           ? 'high'
@@ -133,20 +136,25 @@ const RiskAlertPage = () => {
             ? 'medium'
             : 'low'
         const info = levelMap[maxLevel]
-        return <Tag color={info.color}>{info.text}</Tag>
+        return (
+          <Tag style={{ color: info.color, background: info.bg, borderColor: info.border, borderRadius: 4, fontWeight: 600 }}>
+            {info.text}
+          </Tag>
+        )
       },
     },
     {
       title: '风险类型',
       key: 'risk_types',
+      width: 160,
       render: (_: unknown, record: RiskStudent) => (
-        <span>
+        <div>
           {record.alerts.map((a, i) => (
-            <Tag key={i} style={{ marginBottom: 4 }}>
+            <Tag key={i} style={{ marginBottom: 4, borderRadius: 4 }}>
               {typeMap[a.risk_type] || a.risk_type}
             </Tag>
           ))}
-        </span>
+        </div>
       ),
     },
     {
@@ -154,7 +162,7 @@ const RiskAlertPage = () => {
       key: 'reason',
       width: 280,
       render: (_: unknown, record: RiskStudent) => (
-        <ul style={{ margin: 0, paddingLeft: 16 }}>
+        <ul style={{ margin: 0, paddingLeft: 16, color: '#475569' }}>
           {record.alerts.map((a, i) => (
             <li key={i} style={{ marginBottom: 4 }}>{a.reason}</li>
           ))}
@@ -166,7 +174,7 @@ const RiskAlertPage = () => {
       key: 'advice',
       width: 280,
       render: (_: unknown, record: RiskStudent) => (
-        <ul style={{ margin: 0, paddingLeft: 16 }}>
+        <ul style={{ margin: 0, paddingLeft: 16, color: '#475569' }}>
           {record.alerts.map((a, i) => (
             <li key={i} style={{ marginBottom: 4 }}>{a.advice}</li>
           ))}
@@ -175,97 +183,94 @@ const RiskAlertPage = () => {
     },
   ]
 
+  const summaryCards = riskData ? [
+    { title: '高风险学生', value: riskData.summary.high, icon: <FallOutlined />, color: '#dc2626', bg: '#fef2f2' },
+    { title: '中风险学生', value: riskData.summary.medium, icon: <WarningOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '低风险学生', value: riskData.summary.low, icon: <RiseOutlined />, color: '#2563eb', bg: '#eff6ff' },
+    { title: '班级总人数', value: riskData.student_count, icon: <TeamOutlined />, color: '#059669', bg: '#ecfdf5' },
+  ] : []
+
   return (
-    <Spin spinning={loading}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2>风险预警</h2>
-          <div>
-            {!classId && (
-              <Select
-                style={{ width: 200, marginRight: 8 }}
-                placeholder="选择班级"
-                value={selectedClassId}
-                onChange={handleClassChange}
-                options={classes.map((c) => ({ label: `${c.name} (${c.school_name})`, value: c.id }))}
-              />
-            )}
+    <div className="page-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>风险预警</h2>
+        <div>
+          {!classId && (
             <Select
-              style={{ width: 220 }}
-              placeholder="选择考试"
-              value={selectedExamId}
-              onChange={handleExamChange}
-              options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
+              style={{ width: 200, marginRight: 8 }}
+              placeholder="选择班级"
+              value={selectedClassId}
+              onChange={handleClassChange}
+              options={classes.map((c) => ({ label: `${c.name} (${c.school_name})`, value: c.id }))}
             />
-          </div>
+          )}
+          <Select
+            style={{ width: 220 }}
+            placeholder="选择考试"
+            value={selectedExamId}
+            onChange={handleExamChange}
+            options={exams.map((e) => ({ label: `${e.name} (${e.exam_date})`, value: e.id }))}
+          />
         </div>
-
-        {riskData && (
-          <>
-            <Row gutter={16}>
-              <Col span={8}>
-                <Card>
-                  <Badge count={riskData.summary.high} style={{ backgroundColor: '#ff4d4f' }}>
-                    <div style={{ padding: '0 12px' }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#ff4d4f' }}>{riskData.summary.high}</div>
-                      <div style={{ color: '#666' }}>高风险学生</div>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Badge count={riskData.summary.medium} style={{ backgroundColor: '#faad14' }}>
-                    <div style={{ padding: '0 12px' }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#faad14' }}>{riskData.summary.medium}</div>
-                      <div style={{ color: '#666' }}>中风险学生</div>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Badge count={riskData.summary.low} style={{ backgroundColor: '#1890ff' }}>
-                    <div style={{ padding: '0 12px' }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: '#1890ff' }}>{riskData.summary.low}</div>
-                      <div style={{ color: '#666' }}>低风险学生</div>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-            </Row>
-
-            <Card
-              title={`风险学生列表（共 ${riskData.risk_students.length} 人 / 班级 ${riskData.student_count} 人）`}
-              style={{ marginTop: 16 }}
-            >
-              {riskData.risk_students.length > 0 ? (
-                <Table
-                  dataSource={riskData.risk_students}
-                  columns={columns}
-                  rowKey="student_id"
-                  pagination={{ pageSize: 10 }}
-                  size="small"
-                />
-              ) : (
-                <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>
-                  <p>本次考试暂未发现风险学生</p>
-                </div>
-              )}
-            </Card>
-          </>
-        )}
-
-        {!riskData && !loading && selectedClassId && exams.length === 0 && (
-          <Card style={{ marginTop: 16, textAlign: 'center' }}>
-            <p>该班级暂无考试数据，请先导入成绩</p>
-            <Button type="primary" onClick={() => navigate(`/import/${selectedClassId}`)}>
-              去导入
-            </Button>
-          </Card>
-        )}
       </div>
-    </Spin>
+
+      {loading && !riskData ? (
+        <Row gutter={16}>
+          {[1, 2, 3, 4].map((i) => (
+            <Col span={6} key={i}>
+              <Card><Skeleton active paragraph={{ rows: 1 }} /></Card>
+            </Col>
+          ))}
+        </Row>
+      ) : riskData ? (
+        <>
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            {summaryCards.map((s) => (
+              <Col span={6} key={s.title}>
+                <Card className="card-hover" bodyStyle={{ padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                      {s.icon}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>{s.title}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b', lineHeight: 1 }}>
+                        {s.value}
+                        <span style={{ fontSize: 14, fontWeight: 400, color: '#94a3b8', marginLeft: 4 }}>人</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          <Card
+            title={`风险学生列表（共 ${riskData.risk_students.length} 人 / 班级 ${riskData.student_count} 人）`}
+            className="card-hover"
+          >
+            {riskData.risk_students.length > 0 ? (
+              <Table
+                dataSource={riskData.risk_students}
+                columns={columns}
+                rowKey="student_id"
+                pagination={{ pageSize: 10 }}
+                size="small"
+              />
+            ) : (
+              <EmptyState description="本次考试暂未发现风险学生，请继续保持关注" />
+            )}
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <EmptyState
+            description="该班级暂无考试数据，请先导入成绩"
+            action={{ text: '去导入', onClick: () => navigate(`/import/${selectedClassId}`) }}
+          />
+        </Card>
+      )}
+    </div>
   )
 }
 
