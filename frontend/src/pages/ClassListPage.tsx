@@ -11,7 +11,7 @@ import {
   BankOutlined,
 } from '@ant-design/icons'
 import request from '../utils/request'
-import EmptyState from '../components/EmptyState'
+import GettingStarted from '../components/GettingStarted'
 
 interface ClassItem {
   id: number
@@ -165,12 +165,7 @@ const ClassListPage = () => {
       </Row>
 
       {data.length === 0 && !loading ? (
-        <Card>
-          <EmptyState
-            description="暂无班级数据，请先创建班级"
-            action={{ text: '创建班级', onClick: handleAdd }}
-          />
-        </Card>
+        <GettingStarted step={0} />
       ) : (
         <Row gutter={[16, 16]}>
           {data.map((cls) => (

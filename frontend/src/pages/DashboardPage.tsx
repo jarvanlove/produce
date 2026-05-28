@@ -5,6 +5,7 @@ import { BookOutlined, FileTextOutlined, TeamOutlined, TrophyOutlined, RiseOutli
 import ReactECharts from 'echarts-for-react'
 import request from '../utils/request'
 import EmptyState from '../components/EmptyState'
+import GettingStarted from '../components/GettingStarted'
 
 interface ExamItem {
   id: number
@@ -292,10 +293,12 @@ const DashboardPage = () => {
             />
           </Card>
         </>
+      ) : exams.length === 0 ? (
+        <GettingStarted step={1} classId={classId ? parseInt(classId) : undefined} />
       ) : (
         <Card>
           <EmptyState
-            description="暂无考试数据，请先导入成绩"
+            description="暂无成绩数据，请先导入成绩"
             action={{ text: '去导入成绩', onClick: () => navigate(`/import/${classId}`) }}
           />
         </Card>

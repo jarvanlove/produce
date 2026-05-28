@@ -164,7 +164,10 @@ const StudentProfilePage = () => {
             {loadingList && students.length === 0 ? (
               <Skeleton active paragraph={{ rows: 6 }} />
             ) : students.length === 0 ? (
-              <EmptyState description="暂无学生数据" />
+              <EmptyState
+                description="暂无学生数据，请先导入成绩"
+                action={{ text: '去导入成绩', onClick: () => navigate(`/import/${classId}`) }}
+              />
             ) : (
               <Table
                 dataSource={students}
